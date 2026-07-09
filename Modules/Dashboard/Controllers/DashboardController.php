@@ -295,12 +295,14 @@ class DashboardController extends Controller
                     $meta = json_decode(File::get($jsonPath), true) ?: [];
                 }
 
-                $plugins[] = array_merge([
+                $merged = array_merge([
                     'name' => $dirName,
                     'description' => 'No description provided.',
                     'version' => '1.0.0',
-                    'enabled' => in_array($dirName, $activePlugins),
                 ], $meta);
+
+                $merged['enabled'] = in_array($dirName, $activePlugins);
+                $plugins[] = $merged;
             }
         }
 

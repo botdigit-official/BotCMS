@@ -143,9 +143,11 @@ class BotCMSTest extends TestCase
 
         // Deactivate SEO (which is active by default in our seeder)
         $response = $this->actingAs($user)
+            ->followingRedirects()
             ->post('/admin/plugins/toggle/SEO');
 
-        $response->assertRedirect('/admin/plugins');
+        $response->assertStatus(200);
+        $response->assertSee('Activate'); // SEO should show Activate button now
         
         $activePlugins = json_decode(\Illuminate\Support\Facades\DB::table('settings')->where('key', 'active_plugins')->value('value'), true);
         $this->assertNotContains('SEO', $activePlugins);
