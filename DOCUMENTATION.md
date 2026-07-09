@@ -177,49 +177,78 @@ Use standard Blade directives and hooks to integrate with plugins:
 
 Plugins are modular feature packages residing in `/Plugins`. They boot automatically if checked in the administrator dashboard settings.
 
-### Folder Structure
+### Standard Folder Structure (MVC & Migration Pattern)
+To build a complex extension (such as an E-commerce store or catalog), use this complete model-view-controller folder structure:
 ```
 Plugins/
-└── MyPlugin/
-    ├── plugin.json
-    └── MyPluginServiceProvider.php
+└── ProductCatalog/
+    ├── plugin.json                                         # Metadata descriptor
+    ├── ProductCatalogServiceProvider.php                   # Bootstrapper and hooks binder
+    ├── Models/
+    │   └── Product.php                                     # Eloquent Database Model
+    ├── Controllers/
+    │   ├── AdminProductController.php                      # Handles edit screen form hooks
+    │   └── PublicShopController.php                        # Public shop page controller
+    ├── database/
+    │   └── migrations/
+    │       └── 2026_07_09_000000_create_products_table.php # Custom plugin SQL migrations
+    ├── routes/
+    │   └── web.php                                         # Route endpoints (/shop, etc.)
+    └── resources/
+        └── views/
+            ├── admin/
+            │   └── fields.blade.php                        # Injected input forms
+            └── shop/
+                ├── index.blade.php                         # Product directory listing
+                └── show.blade.php                          # Product single detail page
 ```
 
-### plugin.json Configuration
+### 1. plugin.json Configuration
 Define your plugin meta details:
 ```json
 {
-    "name": "MyPlugin",
+    "name": "ProductCatalog",
     "version": "1.0.0",
-    "description": "My first custom extension plugin.",
+    "description": "Foundational Product Manager and Shop Catalog plugin for E-Commerce features.",
     "enabled": true
 }
 ```
 
-### MyPluginServiceProvider.php Implementation
+### 2. Service Provider and Hooks Binding
 The plugin service provider registers custom routes, views, or hooks into the system:
 
 ```php
 <?php
 
-namespace Plugins\MyPlugin;
+namespace Plugins\ProductCatalog;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Route;
+use App\Core\Facades\PostType;
+use App\Core\Hooks\Facades\Hook;
 
-class MyPluginServiceProvider extends ServiceProvider
+class ProductCatalogServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        // 1. Hook into homepage title filter
-        add_filter('botcms_homepage_title', function(string $title) {
-            return $title . ' | Dynamic Extension';
+        // 1. Register a new post type
+        PostType::register('product', [
+            'label' => 'Products',
+            'singular_label' => 'Product',
+            'icon' => 'briefcase',
+            'supports' => ['title', 'editor']
+        ]);
+
+        // 2. Inject admin edit fields using hooks
+        Hook::addAction('botcms_cpt_edit_fields_product', function ($post) {
+            $controller = app(Controllers\AdminProductController::class);
+            echo $controller->renderFields($post);
         });
 
-        // 2. Register custom plugin routes
-        Route::get('my-custom-endpoint', function() {
-            return response()->json(['status' => 'OK', 'source' => 'MyPlugin']);
-        });
+        // 3. Listen to save actions (specify 2 accepted arguments)
+        Hook::addAction('botcms_cpt_saved_product', function ($post, $request) {
+            $controller = app(Controllers\AdminProductController::class);
+            $controller->saveProduct($post, $request);
+        }, 10, 2);
     }
 }
 ```

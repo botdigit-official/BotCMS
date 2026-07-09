@@ -135,7 +135,7 @@ class DatabaseSeeder extends Seeder
             [
                 'site_id' => $siteId,
                 'key' => 'active_plugins',
-                'value' => json_encode(['SEO']),
+                'value' => json_encode(['SEO', 'ProductCatalog']),
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

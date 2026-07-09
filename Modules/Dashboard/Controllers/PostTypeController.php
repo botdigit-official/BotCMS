@@ -93,7 +93,7 @@ class PostTypeController extends Controller
         }
 
         // 3. Save
-        Post::create([
+        $post = Post::create([
             'site_id' => $siteId,
             'user_id' => Auth::id(),
             'type' => $type,
@@ -103,6 +103,8 @@ class PostTypeController extends Controller
             'metadata' => $request->input('meta', []),
             'status' => $request->input('status'),
         ]);
+
+        do_action("botcms_cpt_saved_{$type}", $post, $request);
 
         return redirect()->route('admin.cpt', $type)->with('success', "{$cpt['singular_label']} created successfully.");
     }
@@ -157,6 +159,8 @@ class PostTypeController extends Controller
             'metadata' => $request->input('meta', []),
             'status' => $request->input('status'),
         ]);
+
+        do_action("botcms_cpt_saved_{$type}", $post, $request);
 
         return redirect()->route('admin.cpt', $type)->with('success', "{$cpt['singular_label']} updated successfully.");
     }

@@ -96,6 +96,9 @@
                 </div>
             @endif
 
+            <!-- Hook to allow plugins to inject custom input fields (e.g. product price, stock) -->
+            {!! do_action("botcms_cpt_edit_fields_{$type}", $post) !!}
+
             <!-- Status & Save -->
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-slate-800">
                 <div class="w-full sm:w-1/3">

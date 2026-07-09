@@ -273,4 +273,60 @@ class BotCMSTest extends TestCase
             \Illuminate\Support\Facades\File::delete($viewPath);
         }
     }
+
+    /**
+     * Test dynamic ProductCatalog plugin registration, database migration, form hooks, and public shop.
+     */
+    public function test_plugin_product_catalog_integration()
+    {
+        $user = User::first(); // Super Admin
+
+        // 1. Verify product CPT is registered by the plugin
+        $this->assertTrue(app('botcms.posttypes')->exists('product'));
+
+        // 2. Verify admin product fields are injected via the action hook
+        $response = $this->actingAs($user)->get('/admin/cpt/product/create');
+        $response->assertStatus(200);
+        $response->assertSee('E-Commerce Product Specifications');
+        $response->assertSee('sku');
+
+        // 3. Save a product via the CPT store endpoint (calling the plugin's save hook)
+        $response = $this->actingAs($user)->post('/admin/cpt/product/store', [
+            'title' => 'iPhone 17 Pro Max',
+            'status' => 'published',
+            'content' => 'The ultimate iPhone model.',
+            'sku' => 'IPHONE-17-PRO',
+            'price' => '1199.99',
+            'stock_quantity' => '50',
+            'is_featured' => '1'
+        ]);
+
+        $response->assertRedirect('/admin/cpt/product');
+
+        // 4. Verify data is saved correctly in both posts and plugin_products tables
+        $this->assertDatabaseHas('posts', [
+            'type' => 'product',
+            'title' => 'iPhone 17 Pro Max'
+        ]);
+
+        $this->assertDatabaseHas('plugin_products', [
+            'sku' => 'IPHONE-17-PRO',
+            'price' => 1199.99,
+            'stock_quantity' => 50,
+            'is_featured' => true
+        ]);
+
+        // 5. Verify public shop index displays the product
+        $response = $this->get('/shop');
+        $response->assertStatus(200);
+        $response->assertSee('iPhone 17 Pro Max');
+        $response->assertSee('$1,199.99');
+
+        // 6. Verify public single product page displays details
+        $response = $this->get('/shop/product/iphone-17-pro-max');
+        $response->assertStatus(200);
+        $response->assertSee('iPhone 17 Pro Max');
+        $response->assertSee('IPHONE-17-PRO');
+        $response->assertSee('50 units');
+    }
 }

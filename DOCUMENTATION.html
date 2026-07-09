@@ -254,9 +254,7 @@
                 </div>
             </section>
 
-            <hr class="border-slate-800">
-
-            <!-- Plugin System -->
+            <hr class="border-slate-800">            <!-- Plugin System -->
             <section id="plugin-management" class="space-y-4">
                 <h2 class="text-2xl font-bold text-white">Uploading &amp; Creating Plugins</h2>
                 <p class="text-slate-400 text-sm">
@@ -264,38 +262,51 @@
                 </p>
                 <div class="space-y-4">
                     <p class="text-xs text-slate-400">
-                        1. Create your folder `Plugins/MyCustomPlugin/`.  
-                        2. Place a `plugin.json` descriptor file:
+                        1. To build a complex MVC extension (such as an E-commerce store), create a dedicated subfolder (e.g. <code>Plugins/ProductCatalog/</code>) containing Models, Controllers, custom Migrations, Routes, and Service Providers.
+                    </p>
+                    <p class="text-xs text-slate-400">
+                        2. Place a <code>plugin.json</code> descriptor file:
                     </p>
                     <pre class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-indigo-300 font-mono">
 {
-  "name": "MyCustomPlugin",
+  "name": "ProductCatalog",
   "version": "1.0.0",
-  "description": "Optimises page configurations and binds custom webhooks.",
+  "description": "Foundational Product Manager and Shop Catalog plugin for E-Commerce features.",
   "enabled": true
 }</pre>
                     <p class="text-xs text-slate-400">
-                        3. Create `MyCustomPluginServiceProvider.php` inside the folder. Use this provider to hook into action/filter scopes or register dynamic routes:
+                        3. Create your Service Provider class to register Custom Post Types, dynamic shop routes, and hook into core actions/filters:
                     </p>
                     <pre class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-slate-400 font-mono">
-<span class="text-indigo-400">namespace</span> Plugins\MyCustomPlugin;
-
+<span class="text-indigo-400">namespace</span> Plugins\ProductCatalog;
+ 
 <span class="text-indigo-400">use</span> Illuminate\Support\ServiceProvider;
-<span class="text-indigo-400">use</span> Illuminate\Support\Facades\Route;
-
-<span class="text-indigo-400">class</span> MyCustomPluginServiceProvider <span class="text-indigo-400">extends</span> ServiceProvider
+<span class="text-indigo-400">use</span> App\Core\Facades\PostType;
+<span class="text-indigo-400">use</span> App\Core\Hooks\Facades\Hook;
+ 
+<span class="text-indigo-400">class</span> ProductCatalogServiceProvider <span class="text-indigo-400">extends</span> ServiceProvider
 {
     <span class="text-indigo-400">public function</span> boot(): void
     {
-        <span class="text-emerald-400">// Hook into welcome heading filter</span>
-        add_filter('botcms_homepage_welcome_text', function($text) {
-            return $text . ' | Modified by Plugin!';
+        <span class="text-emerald-400">// Register Custom Post Type</span>
+        PostType::register('product', [
+            'label' => 'Products',
+            'singular_label' => 'Product',
+            'icon' => 'briefcase',
+            'supports' => ['title', 'editor']
+        ]);
+ 
+        <span class="text-emerald-400">// Inject custom inputs into CPT edit form using hooks</span>
+        Hook::addAction('botcms_cpt_edit_fields_product', function ($post) {
+            $controller = app(Controllers\AdminProductController::class);
+            echo $controller->renderFields($post);
         });
-
-        <span class="text-emerald-400">// Register dynamic routes</span>
-        Route::get('my-plugin-api', function() {
-            return response()->json(['status' => 'OK']);
-        });
+ 
+        <span class="text-emerald-400">// Listen to save/update triggers (accepting 2 arguments)</span>
+        Hook::addAction('botcms_cpt_saved_product', function ($post, $request) {
+            $controller = app(Controllers\AdminProductController::class);
+            $controller->saveProduct($post, $request);
+        }, 10, 2);
     }
 }</pre>
                 </div>
