@@ -1,0 +1,6 @@
+{
+    "name": "SEO Plugin",
+    "version": "1.1.0",
+    "description": "Enterprise AI-powered Search Engine Optimization plugin that dynamically filters titles, appends meta keywords, and optimizes page structure.",
+    "enabled": true
+}
