@@ -76,6 +76,29 @@ class BotCommerceServiceProvider extends ServiceProvider
             $controller = app(AdminProductController::class);
             $controller->saveProduct($post, $request);
         }, 10, 2);
+
+        // 6. Hook into page object resolver to virtualize Cart and Checkout pages
+        Hook::addFilter('botcms_resolve_page_object', function ($page, $slug, $site) {
+            if ($slug === 'cart' || $slug === 'checkout') {
+                return new \App\Models\Post([
+                    'site_id' => $site->id,
+                    'title' => ucfirst($slug),
+                    'slug' => $slug,
+                    'type' => 'page',
+                    'status' => 'published',
+                    'content' => "<!--botcommerce_{$slug}-->"
+                ]);
+            }
+            return $page;
+        }, 10, 3);
+
+        // 7. Hook into page template resolution to load dynamic plugin views
+        Hook::addFilter('botcms_resolve_page_view', function ($view, $slug, $page, $site) {
+            if ($slug === 'cart' || $slug === 'checkout') {
+                return "botcommerce::shop.{$slug}";
+            }
+            return $view;
+        }, 10, 4);
     }
 
     /**

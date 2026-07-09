@@ -442,6 +442,41 @@ PostType::register('portfolio', [
                             <li><strong>Template Overrides Signature:</strong> Create <code>single-portfolio.blade.php</code> and access custom JSON properties in the Blade template using <code>$post->meta['client_name']</code>.</li>
                         </ol>
                     </div>
+
+                    <div class="glass p-5 rounded-2xl space-y-2">
+                        <h3 class="font-bold text-slate-200">4. Dynamic Virtual Pages (Plugin-First Style)</h3>
+                        <p class="text-xs text-slate-400">
+                            Plugins can register virtual routes that act like physical pages in the system (e.g. <code>/cart</code> or <code>/checkout</code> in <code>BotCommerce</code>) without requiring any database page records or manual file uploads by the user.
+                        </p>
+                        <ol class="list-decimal pl-5 text-xs text-slate-400 space-y-1">
+                            <li><strong>Virtual Page Interception Hook (<code>botcms_resolve_page_object</code>)</strong>: Plugins register virtual pages by returning a dummy <code>Post</code> instance inside their boot provider:
+                                <pre class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs text-indigo-300 font-mono mt-1">
+Hook::addFilter('botcms_resolve_page_object', function ($page, $slug, $site) {
+    if ($slug === 'cart' || $slug === 'checkout') {
+        return new \App\Models\Post([
+            'site_id' => $site->id,
+            'title' => ucfirst($slug),
+            'slug' => $slug,
+            'type' => 'page',
+            'status' => 'published',
+            'content' => "&lt;!--botcommerce_{$slug}--&gt;"
+        ]);
+    }
+    return $page;
+}, 10, 3);</pre>
+                            </li>
+                            <li><strong>Template View Override Hook (<code>botcms_resolve_page_view</code>)</strong>: Return the plugin's internal Blade view name when the slug is hit:
+                                <pre class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs text-indigo-300 font-mono mt-1">
+Hook::addFilter('botcms_resolve_page_view', function ($view, $slug, $page, $site) {
+    if ($slug === 'cart' || $slug === 'checkout') {
+        return "botcommerce::shop.{$slug}";
+    }
+    return $view;
+}, 10, 4);</pre>
+                            </li>
+                            <li><strong>Theme Customization Priority:</strong> If a theme developer wants to style the cart or checkout page differently, they can create <code>page-cart.blade.php</code> in their active theme. Because BotCMS checks the theme directory first, the custom theme view automatically overrides the plugin's default fallback template, matching WordPress and Shopify developer priorities!</li>
+                        </ol>
+                    </div>
                 </div>
             </section>
 

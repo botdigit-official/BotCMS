@@ -346,3 +346,38 @@ Unlike WordPress's slow EAV metadata queries, BotCMS supports registering Custom
    - Archive list view: `Themes/{active}/resources/views/archive-portfolio.blade.php`
    - Access custom JSON properties in the Blade template using `$post->meta['client_name']`.
 
+### 4. Dynamic Virtual Pages (Plugin-First Style)
+Plugins can register virtual routes that act like physical pages in the system (e.g. `/cart` or `/checkout` in `BotCommerce`) without requiring any database page records or manual file uploads by the user.
+
+1. **Virtual Page Interception Hook (`botcms_resolve_page_object`)**:
+   Plugins register virtual pages by returning a dummy `Post` instance inside their boot provider:
+   ```php
+   Hook::addFilter('botcms_resolve_page_object', function ($page, $slug, $site) {
+       if ($slug === 'cart' || $slug === 'checkout') {
+           return new \App\Models\Post([
+               'site_id' => $site->id,
+               'title' => ucfirst($slug),
+               'slug' => $slug,
+               'type' => 'page',
+               'status' => 'published',
+               'content' => "<!--botcommerce_{$slug}-->"
+           ]);
+       }
+       return $page;
+   }, 10, 3);
+   ```
+
+2. **Template View Override Hook (`botcms_resolve_page_view`)**:
+   Return the plugin's internal Blade view name when the slug is hit:
+   ```php
+   Hook::addFilter('botcms_resolve_page_view', function ($view, $slug, $page, $site) {
+       if ($slug === 'cart' || $slug === 'checkout') {
+           return "botcommerce::shop.{$slug}";
+       }
+       return $view;
+   }, 10, 4);
+   ```
+
+3. **Theme Customization Priority**:
+   If a theme developer wants to style the cart or checkout page differently, they can create `page-cart.blade.php` in their active theme. Because BotCMS checks the theme directory *first*, the custom theme view automatically overrides the plugin's default fallback template, matching WordPress and Shopify developer priorities!
+

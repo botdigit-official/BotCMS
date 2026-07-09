@@ -356,5 +356,14 @@ class BotCMSTest extends TestCase
         $response->assertSee('iPhone 17 Pro Max');
         $response->assertSee('IPHONE-17-PRO');
         $response->assertSee('50 units');
+
+        // 10. Verify virtual cart and checkout pages resolve successfully
+        $response = $this->get('/cart');
+        $response->assertStatus(200);
+        $response->assertSee('Your Shopping Cart');
+
+        $response = $this->get('/checkout');
+        $response->assertStatus(200);
+        $response->assertSee('Secure Checkout');
     }
 }

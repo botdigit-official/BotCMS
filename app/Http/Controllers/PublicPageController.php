@@ -33,6 +33,9 @@ class PublicPageController extends Controller
             ->where('status', 'published')
             ->first();
 
+        // Allow plugins to inject virtual page objects (e.g. dynamic cart/checkout pages)
+        $page = \App\Core\Hooks\Facades\Hook::applyFilters('botcms_resolve_page_object', $page, $slug, $site);
+
         // 3. Resolve visual rendering hierarchy
         $activeTheme = DB::table('settings')->where('site_id', $site->id)->where('key', 'active_theme')->value('value') ?: 'Default';
 
@@ -49,7 +52,13 @@ class PublicPageController extends Controller
             return view($customPrefixTemplate, compact('page', 'site'));
         }
 
-        // If page is not in DB and no custom code template exists -> 404
+        // Allow plugins to override the page view template dynamically
+        $pluginViewName = \App\Core\Hooks\Facades\Hook::applyFilters('botcms_resolve_page_view', null, $slug, $page, $site);
+        if ($pluginViewName && View::exists($pluginViewName)) {
+            return view($pluginViewName, compact('page', 'site'));
+        }
+
+        // If page is not resolved and no template exists -> 404
         if (!$page) {
             abort(404, "Page [/{$slug}] not found.");
         }
