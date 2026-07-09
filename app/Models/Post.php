@@ -16,8 +16,13 @@ class Post extends Model
         'title',
         'slug',
         'content',
+        'metadata',
         'status',
         'mime_type',
+    ];
+
+    protected $casts = [
+        'metadata' => 'array',
     ];
 
     /**

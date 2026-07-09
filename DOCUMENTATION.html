@@ -386,6 +386,30 @@
                             <li><strong>Resolution Priority:</strong> When a user accesses <code>/services</code>, BotCMS checks if the theme template file exists. If it does, <strong>it renders the theme template file directly, ignoring the database content!</strong> This allows developers to code templates directly in the repo while keeping database content as fallback.</li>
                         </ol>
                     </div>
+
+                    <div class="glass p-5 rounded-2xl space-y-2">
+                        <h3 class="font-bold text-slate-200">3. Custom Post Types &amp; JSON Metadata (No Bloat CPTs)</h3>
+                        <p class="text-xs text-slate-400">
+                            Unlike WordPress's slow EAV metadata queries, BotCMS supports registering Custom Post Types (CPTs) with native database JSON column caching:
+                        </p>
+                        <ol class="list-decimal pl-5 text-xs text-slate-400 space-y-1">
+                            <li>Register the CPT in <code>AppServiceProvider.php</code> (or inside any Plugin Provider):
+                                <pre class="bg-slate-900 border border-slate-800 p-3 rounded-xl text-xs text-indigo-300 font-mono mt-1">
+PostType::register('portfolio', [
+    'label' => 'Portfolio',
+    'singular_label' => 'Project',
+    'icon' => 'briefcase',
+    'supports' => ['title', 'editor', 'thumbnail'],
+    'fields' => [
+        'client_name' => ['type' => 'text', 'label' => 'Client Name'],
+        'project_date' => ['type' => 'date', 'label' => 'Completion Date'],
+    ]
+]);</pre>
+                            </li>
+                            <li><strong>Instant UI Auto-Generation:</strong> A new sidebar menu item is created in the Admin Dashboard automatically. Forms, input fields, and lists are generated dynamically based on the schema and saved inside the native database <code>metadata</code> JSON block.</li>
+                            <li><strong>Template Overrides Signature:</strong> Create <code>single-portfolio.blade.php</code> and access custom JSON properties in the Blade template using <code>$post->meta['client_name']</code>.</li>
+                        </ol>
+                    </div>
                 </div>
             </section>
 

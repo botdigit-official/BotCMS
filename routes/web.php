@@ -8,3 +8,4 @@ Route::get('/', function () {
 });
 
 Route::get('{slug}', [PublicPageController::class, 'show'])->name('page.show');
+Route::get('{type}/{slug}', [PublicPageController::class, 'showPost'])->name('post.show');

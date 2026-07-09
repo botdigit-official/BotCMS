@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
+use App\Core\Facades\PostType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\View;
@@ -60,6 +61,47 @@ class PublicPageController extends Controller
 
         // System default fallback layout
         return $this->renderSystemFallbackPage($page, $site);
+    }
+
+    /**
+     * Show custom post type item dynamically.
+     */
+    public function showPost(Request $request, string $type, string $slug)
+    {
+        if (!PostType::exists($type)) {
+            abort(404, "Custom Post Type [{$type}] not registered.");
+        }
+
+        // Resolve current site
+        $domain = $request->getHost();
+        $site = DB::table('sites')->where('domain', $domain)->first();
+        if (!$site) {
+            $site = DB::table('sites')->find(1);
+        }
+
+        // Fetch published item from DB
+        $post = Post::where('site_id', $site->id)
+            ->where('type', $type)
+            ->where('slug', $slug)
+            ->where('status', 'published')
+            ->firstOrFail();
+
+        $post->meta = $post->metadata ?: [];
+
+        // check theme template overrides
+        $singleTemplate = "single-{$type}";
+        if (View::exists($singleTemplate)) {
+            return view($singleTemplate, compact('post', 'site'));
+        }
+
+        // fallback to standard theme page view
+        if (View::exists('page')) {
+            $page = $post;
+            return view('page', compact('page', 'site'));
+        }
+
+        // System fallback
+        return $this->renderSystemFallbackPage($post, $site);
     }
 
     /**

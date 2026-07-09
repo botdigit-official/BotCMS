@@ -256,3 +256,28 @@ If a coding AI or developer wants to build a highly customized layout with anima
 3. Put your custom HTML, Tailwind/Bootstrap classes, and Blade logic inside this file.
 4. **Resolution Priority**: When a user accesses `/services`, BotCMS checks if the theme template file exists. If it does, **it renders the theme template file directly (ignoring the database content)**! This allows developers to code templates in the repo while allowing non-technical managers to use database fallback content.
 5. If the database page has a published entry but no custom file exists, the system automatically uses the generic `page.blade.php` fallback layout in the active theme.
+
+### 3. Custom Post Types & JSON Metadata (No Bloat CPTs)
+Unlike WordPress's slow EAV metadata queries, BotCMS supports registering Custom Post Types (CPTs) with native database JSON column caching:
+1. **Register the CPT in `AppServiceProvider.php` (or inside any Plugin Provider)**:
+   ```php
+   use App\Core\Facades\PostType;
+
+   PostType::register('portfolio', [
+       'label' => 'Portfolio',
+       'singular_label' => 'Project',
+       'icon' => 'briefcase',
+       'supports' => ['title', 'editor', 'thumbnail'],
+       'fields' => [
+           'client_name' => ['type' => 'text', 'label' => 'Client Name', 'placeholder' => 'Enter Client Name'],
+           'project_date' => ['type' => 'date', 'label' => 'Completion Date'],
+           'project_url' => ['type' => 'url', 'label' => 'Project URL', 'placeholder' => 'https://...'],
+       ]
+   ]);
+   ```
+2. **Instant UI Auto-Generation**: Once registered, a new sidebar menu item is created in the Admin Dashboard automatically. The forms, input fields, and lists are generated dynamically based on the `'fields'` schema and saved inside the native database `metadata` JSON array block on the `posts` table.
+3. **Template overrides signature**:
+   - Single item view: `Themes/{active}/resources/views/single-portfolio.blade.php`
+   - Archive list view: `Themes/{active}/resources/views/archive-portfolio.blade.php`
+   - Access custom JSON properties in the Blade template using `$post->meta['client_name']`.
+

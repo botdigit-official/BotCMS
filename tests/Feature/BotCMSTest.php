@@ -203,16 +203,74 @@ class BotCMSTest extends TestCase
 
         // Create a temporary file in Themes/Default/resources/views/page-contact-us.blade.php
         $viewPath = base_path('Themes/Default/resources/views/page-contact-us.blade.php');
-        \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($viewPath));
-        \Illuminate\Support\Facades\File::put($viewPath, '<h1>Overridden Theme Code Layout</h1>');
+        
+        try {
+            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($viewPath));
+            \Illuminate\Support\Facades\File::put($viewPath, '<h1>Overridden Theme Code Layout</h1>');
 
-        // Verify page route now renders the theme file content (taking priority over DB content!)
-        $response = $this->get('/contact-us');
+            // Verify page route now renders the theme file content (taking priority over DB content!)
+            $response = $this->get('/contact-us');
+            $response->assertStatus(200);
+            $response->assertSee('Overridden Theme Code Layout');
+            $response->assertDontSee('DB Content');
+        } finally {
+            // Cleanup
+            \Illuminate\Support\Facades\File::delete($viewPath);
+        }
+    }
+
+    /**
+     * Test Custom Post Types CRUD and rendering with dynamic metadata JSON.
+     */
+    public function test_admin_can_manage_cpts_and_render_them()
+    {
+        $user = User::first(); // Super Admin
+
+        // 1. Verify index page works
+        $response = $this->actingAs($user)->get('/admin/cpt/portfolio');
         $response->assertStatus(200);
-        $response->assertSee('Overridden Theme Code Layout');
-        $response->assertDontSee('DB Content');
+        $response->assertSee('Portfolio');
 
-        // Cleanup
-        \Illuminate\Support\Facades\File::delete($viewPath);
+        // 2. Verify create page works
+        $response = $this->actingAs($user)->get('/admin/cpt/portfolio/create');
+        $response->assertStatus(200);
+        $response->assertSee('Client Name'); // Dynamic custom field
+
+        // 3. Store a portfolio project in DB with metadata
+        $response = $this->actingAs($user)->post('/admin/cpt/portfolio/store', [
+            'title' => 'My New Website Project',
+            'status' => 'published',
+            'content' => 'Portfolio description',
+            'meta' => [
+                'client_name' => 'Google Inc',
+                'project_date' => '2026-07-09',
+                'project_url' => 'https://google.com'
+            ]
+        ]);
+
+        $response->assertRedirect('/admin/cpt/portfolio');
+
+        // 4. Verify public page renders correctly (using fallback generic layout)
+        $response = $this->get('/portfolio/my-new-website-project');
+        $response->assertStatus(200);
+        $response->assertSee('My New Website Project');
+        $response->assertSee('Portfolio description');
+
+        // 5. Test template overrides custom file priority
+        $viewPath = base_path('Themes/Default/resources/views/single-portfolio.blade.php');
+        
+        try {
+            \Illuminate\Support\Facades\File::ensureDirectoryExists(dirname($viewPath));
+            \Illuminate\Support\Facades\File::put($viewPath, '<h1>Project Client: {{ $post->meta[\'client_name\'] }}</h1>');
+
+            // Verify page route now renders the theme template file and retrieves JSON meta correctly
+            $response = $this->get('/portfolio/my-new-website-project');
+            $response->assertStatus(200);
+            $response->assertSee('Project Client: Google Inc');
+            $response->assertDontSee('Portfolio description'); // Because we overrode the whole layout
+        } finally {
+            // Cleanup
+            \Illuminate\Support\Facades\File::delete($viewPath);
+        }
     }
 }
