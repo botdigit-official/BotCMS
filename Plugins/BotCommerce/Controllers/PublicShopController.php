@@ -8,6 +8,8 @@ use Plugins\BotCommerce\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+use Illuminate\Support\Facades\View;
+
 class PublicShopController extends Controller
 {
     /**
@@ -25,7 +27,12 @@ class PublicShopController extends Controller
         // Find site settings for branding
         $site = DB::table('sites')->find(1);
 
-        return view('botcommerce::shop.index', compact('products', 'site'));
+        $view = 'archive-product';
+        if (!View::exists($view)) {
+            $view = 'botcommerce::shop.index';
+        }
+
+        return view($view, compact('products', 'site'));
     }
 
     /**
@@ -41,6 +48,11 @@ class PublicShopController extends Controller
         $product = Product::where('post_id', $post->id)->firstOrFail();
         $site = DB::table('sites')->find(1);
 
-        return view('botcommerce::shop.show', compact('post', 'product', 'site'));
+        $view = 'single-product';
+        if (!View::exists($view)) {
+            $view = 'botcommerce::shop.show';
+        }
+
+        return view($view, compact('post', 'product', 'site'));
     }
 }

@@ -28,7 +28,8 @@
                 {{ $site->name }}
             </a>
             <div class="d-flex align-items-center gap-3">
-                <span class="badge bg-info-subtle text-info font-monospace">Bootstrap 5 Theme</span>
+                <a href="/shop" class="text-secondary text-decoration-none small fw-semibold hover:text-white">Shop</a>
+                <a href="/cart" class="text-secondary text-decoration-none small fw-semibold hover:text-white">Cart</a>
                 <a href="{{ route('login') }}" class="btn btn-info btn-sm fw-bold">
                     Admin Dashboard
                 </a>

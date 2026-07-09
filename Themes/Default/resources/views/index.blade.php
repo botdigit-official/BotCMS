@@ -22,8 +22,9 @@
             <span class="text-xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
                 BotCMS Theme: Default
             </span>
-            <div class="flex items-center space-x-4">
-                <span class="text-xs px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-mono">Tailwind CSS</span>
+            <div class="flex items-center space-x-6">
+                <a href="/shop" class="text-sm font-semibold text-slate-400 hover:text-white">Shop</a>
+                <a href="/cart" class="text-sm font-semibold text-slate-400 hover:text-white">Cart</a>
                 <a href="{{ route('login') }}" class="text-xs font-semibold px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 shadow-md shadow-blue-600/20 transition-all">
                     Admin Dashboard
                 </a>
