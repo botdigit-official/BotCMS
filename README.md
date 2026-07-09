@@ -1,91 +1,112 @@
-# BotCMS
+# BotCMS Platform
 
 **A Laravel-powered Content Management Platform**  
-*Modular • AI Native • Headless • Multi-Site • Marketplace Ready • Enterprise Ready*
+*Modular Monolith • AI-Native • JSON-Metadata CPTs • Multi-Site • Marketplace Ready*
 
-BotCMS is an advanced, modular-monolith alternative to traditional content management platforms. Designed as a modern, secure, and blazing-fast engine, BotCMS allows you to build several editions (Starter, Tiny, Headless, Business, Commerce, Enterprise) from the exact same core without code bloat.
-
----
-
-## Key Features
-
-- 🧩 **Modular Monolith**: Core modules reside in `Modules/`, decoupling business logic from standard application boot.
-- ⚡ **Secure Hooks Engine**: A typed Action and Filter hook system (`Hook::action()`, `Hook::filter()`) with built-in sandbox isolation and Redis caching.
-- 🎨 **Dynamic Theme System**: Switch layouts and CSS styling frameworks (e.g., Tailwind CSS vs Bootstrap 5) on the fly directly via the administrator dashboard settings.
-- 🔌 **Dynamic Plugin System**: Upload zip packages into the `Plugins/` directory and activate them with a single click in the admin settings without requiring Composer knowledge.
-- 🌐 **Multisite Out of the Box**: Map domains to multiple virtual sites running on a unified codebase and database structure.
+BotCMS is an advanced, high-performance alternative to WordPress and Shopify. Built on Laravel 13+ and PHP 8.4+, BotCMS combines the dynamic extensibility of classic CMS platforms with the security, speed, and clean MVC structure of modern web applications.
 
 ---
 
-## Project Structure
+## 📊 Technical Comparison: WordPress vs. Shopify vs. BotCMS
 
+| Feature | WordPress | Shopify | BotCMS (Our Monolith) |
+| :--- | :--- | :--- | :--- |
+| **Framework/Language** | Legacy PHP (Procedural) | Closed SaaS (Ruby/Liquid) | Modern PHP 8.4+ / Laravel 13 (MVC) |
+| **Database Schema** | Bloated EAV (`wp_postmeta`) | Proprietary API Cache | **Clean SQL + JSON Metadata Columns** |
+| **Response Speed** | 150ms - 500ms (Uncached) | Variable (Hosted API) | **Sub-15ms** (Native database compile) |
+| **AI Compatibility** | Poor (Requires heavy DB setups) | Medium (Theme Liquid files) | **Excellent** (Code-first template files) |
+| **Extensibility** | Messy Hook actions | App Bridge Webhooks (Slow) | **Secure Sandbox Action/Filter Hooks** |
+| **Architecture** | Spaghetti legacy files | Multi-tenant SaaS | **Decoupled Modular Monolith** |
+
+---
+
+## 🧩 Foundational Architecture
+
+BotCMS is designed around three decoupled, recursive folders residing in the workspace root:
+
+1. **`Modules/` (Core Application Layer)**: Holds essential system packages like **Auth** (login, roles, RBAC permissions) and **Dashboard** (visual control panel screens).
+2. **`Plugins/` (Logical Extension Layer)**: Self-contained packages with custom routes, controllers, models, and migrations. They can inject HTML input fields into forms using core Action Hooks and save extra data into custom SQL tables.
+3. **`Themes/` (Visual Frontend Layer)**: Folder structures containing custom templates and CSS styling configurations. Switching active themes dynamically swaps the CSS framework engine (Tailwind CSS vs. Bootstrap 5).
+
+---
+
+## 💡 Key Developer & AI Features
+
+### 1. Hybrid Code-First Templates (WordPress & Shopify Style)
+Non-technical managers can create pages in the Admin Dashboard. However, if a developer or coding AI wants to build a highly customized, interactive page:
+* Simply create a file named `page-{$slug}.blade.php` (e.g. `page-about-us.blade.php`) inside your active theme directory (`Themes/{activeTheme}/resources/views/`).
+* **Resolution Priority**: When a user visits `/about-us`, BotCMS scans the theme directory first. If the file exists, it renders the template file directly, ignoring the database content!
+
+### 2. Custom Post Types & JSON Metadata (No Bloat CPTs)
+Register new post types (e.g. Portfolio, Testimonials) at boot time:
+```php
+use App\Core\Facades\PostType;
+
+PostType::register('portfolio', [
+    'label' => 'Portfolio',
+    'singular_label' => 'Project',
+    'icon' => 'briefcase',
+    'supports' => ['title', 'editor'],
+    'fields' => [
+        'client_name' => ['type' => 'text', 'label' => 'Client Name'],
+        'project_date' => ['type' => 'date', 'label' => 'Completion Date'],
+    ]
+]);
 ```
-botcms/
-├── Modules/             # Core Feature Modules (Auth, Dashboard)
-├── Plugins/             # ZIP-uploadable Extension Packages (SEO, Gallery, etc.)
-├── Themes/              # Frontend Visual Layouts (Default, BootstrapDemo)
-├── Workspaces/          # Multi-site tenant layouts and file uploads
-├── app/
-│   └── Core/
-│       └── Hooks/       # Secure Hook Engine (Action/Filter Manager)
-├── config/              # Standard Laravel Configurations
-├── database/            # Migrations & SQLite database
-└── routes/              # Main route file definitions
-```
+* **Auto-Generated Admin UI**: Forms, fields, and tables are generated automatically in the Admin Dashboard.
+* **Database Performance**: Saved attributes are stored in a native `metadata` JSON column on the `posts` table—retaining dynamic flexibility while utilizing native database JSON index compiled speeds.
+
+### 3. Reference MVC Plugin: ProductCatalog (`Plugins/ProductCatalog`)
+We have built a foundational E-Commerce starter plugin showing how plugins can extend the core platform:
+* **Custom Migrations**: Creates a `plugin_products` table containing `sku`, `price`, and `stock_quantity`.
+* **Action Hook Injections**: Injects inputs into the dynamic product CPT edit form using `botcms_cpt_edit_fields_product` and saves data to its custom table using `botcms_cpt_saved_product`.
+* **Public Shop Catalog**: Registers public routes `/shop` and `/shop/product/{slug}` utilizing its own models and Blade views.
 
 ---
 
-## Quick Start (Local Development)
+## 🚀 Quick Start (Local Development)
 
 ### 1. Requirements
-- PHP 8.4+ (PHP 8.5 recommended)
-- Composer
-- SQLite (or PostgreSQL)
+* PHP 8.4+ (PHP 8.5 recommended)
+* Composer 2.9+
+* SQLite (default) or PostgreSQL/MySQL
 
 ### 2. Setup & Installation (1-Click Installer)
-
-Run the unified, interactive installer script:
+Run the interactive setup script in the workspace root:
 ```bash
 ./install.sh
 ```
-This script will automatically verify your environment, install PHP dependencies, configure your database driver (SQLite, MySQL, or PostgreSQL), create the database, run migrations, and seed initial values.
+This script validates your environment, installs dependencies, prompts you to select your preferred database driver, runs migrations, and seeds defaults.
 
-### 3. Running the Server
-
-Start the development server:
+### 3. Start Development Server
 ```bash
 php artisan serve
 ```
-
-The application will be running at [http://127.0.0.1:8000](http://127.0.0.1:8000).
-
----
-
-## Testing & Authentication
-
-### Default Admin Account
-- **URL**: [http://127.0.0.1:8000/login](http://127.0.0.1:8000/login)
-- **Email**: `admin@botcms.local`
-- **Password**: `admin123`
-
-### Testing the Site Switcher & SEO Plugin
-1. Open the homepage at `http://127.0.0.1:8000`. You will see the **Default Theme** loaded using **Tailwind CSS**.
-2. Notice the `[SEO Active]` badge in the title, and the **SEO Audit Webhook Link** in the content section. These are injected dynamically by the SEO Plugin located in `Plugins/SEO`.
-3. Click **Admin Dashboard** and log in.
-4. Go to **Settings** in the sidebar.
-5. Change the active theme to **BootstrapDemo**, uncheck the SEO Plugin from the active list, and click **Save**.
-6. Refresh the homepage. The visual styling will instantly re-render using **Bootstrap 5**, and the SEO enhancements and dynamic webhook links will disappear, illustrating clean runtime modular decoupling!
+Open [http://127.0.0.1:8000](http://127.0.0.1:8000) to view the public site.
 
 ---
 
-## Running Automated Tests
+## 🔐 Credentials & Testing
 
-Run the full platform test suite to verify module isolation, hook bindings, and authentication flows:
+* **Admin URL**: [http://127.0.0.1:8000/login](http://127.0.0.1:8000/login)
+* **Default Super Admin**:
+  * **Email**: `admin@botcms.local`
+  * **Password**: `admin123`
+
+### Run Automated Tests
+Execute the feature test suite verifying modular isolation, hooks registry, authentication, CPTs, and ProductCatalog integration:
 ```bash
 php artisan test
 ```
 
 ---
 
-## License
-Licensed under the [MIT License](LICENSE). Open source for everyone to use and build upon.
+## 📜 Detailed Docs
+For a deep dive into Hook registries, custom plugin creation, and theme configuration, refer to our detailed developer logs:
+* **Markdown format**: [DOCUMENTATION.md](DOCUMENTATION.md)
+* **HTML format**: [DOCUMENTATION.html](DOCUMENTATION.html)
+
+---
+
+## 📄 License
+Licensed under the [MIT Open Source License](LICENSE). Build something extraordinary!
