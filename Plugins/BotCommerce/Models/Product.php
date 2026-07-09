@@ -1,6 +1,6 @@
 <?php
 
-namespace Plugins\ProductCatalog\Models;
+namespace Plugins\BotCommerce\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Post;

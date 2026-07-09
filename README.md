@@ -56,9 +56,10 @@ PostType::register('portfolio', [
 * **Auto-Generated Admin UI**: Forms, fields, and tables are generated automatically in the Admin Dashboard.
 * **Database Performance**: Saved attributes are stored in a native `metadata` JSON column on the `posts` table—retaining dynamic flexibility while utilizing native database JSON index compiled speeds.
 
-### 3. Reference MVC Plugin: ProductCatalog (`Plugins/ProductCatalog`)
+### 3. Reference MVC Plugin: BotCommerce (`Plugins/BotCommerce`)
 We have built a foundational E-Commerce starter plugin showing how plugins can extend the core platform:
 * **Custom Migrations**: Creates a `plugin_products` table containing `sku`, `price`, and `stock_quantity`.
+* **Hierarchical Sidebar Menus**: Dynamic parent-child navigation registry using the `AdminMenu` facade, creating nested Products, Orders, and Stripe Gateways screens.
 * **Action Hook Injections**: Injects inputs into the dynamic product CPT edit form using `botcms_cpt_edit_fields_product` and saves data to its custom table using `botcms_cpt_saved_product`.
 * **Public Shop Catalog**: Registers public routes `/shop` and `/shop/product/{slug}` utilizing its own models and Blade views.
 
@@ -94,7 +95,7 @@ Open [http://127.0.0.1:8000](http://127.0.0.1:8000) to view the public site.
   * **Password**: `admin123`
 
 ### Run Automated Tests
-Execute the feature test suite verifying modular isolation, hooks registry, authentication, CPTs, and ProductCatalog integration:
+Execute the feature test suite verifying modular isolation, hooks registry, authentication, CPTs, and BotCommerce integration:
 ```bash
 php artisan test
 ```

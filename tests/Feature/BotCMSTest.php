@@ -277,22 +277,30 @@ class BotCMSTest extends TestCase
     }
 
     /**
-     * Test dynamic ProductCatalog plugin registration, database migration, form hooks, and public shop.
+     * Test dynamic BotCommerce plugin registration, database migration, form hooks, submenus, gateways, and public shop.
      */
-    public function test_plugin_product_catalog_integration()
+    public function test_plugin_bot_commerce_integration()
     {
         $user = User::first(); // Super Admin
 
-        // 1. Verify product CPT is registered by the plugin
+        // 1. Verify product and order CPTs are registered by the plugin
         $this->assertTrue(app('botcms.posttypes')->exists('product'));
+        $this->assertTrue(app('botcms.posttypes')->exists('order'));
 
-        // 2. Verify admin product fields are injected via the action hook
+        // 2. Verify BotCommerce menus and submenus are registered dynamically
+        $menus = app('botcms.adminmenu')->all();
+        $this->assertArrayHasKey('botcommerce', $menus);
+        $this->assertArrayHasKey('products', $menus['botcommerce']['submenus']);
+        $this->assertArrayHasKey('orders', $menus['botcommerce']['submenus']);
+        $this->assertArrayHasKey('gateways', $menus['botcommerce']['submenus']);
+
+        // 3. Verify admin product fields are injected via the action hook
         $response = $this->actingAs($user)->get('/admin/cpt/product/create');
         $response->assertStatus(200);
         $response->assertSee('E-Commerce Product Specifications');
         $response->assertSee('sku');
 
-        // 3. Save a product via the CPT store endpoint (calling the plugin's save hook)
+        // 4. Save a product via the CPT store endpoint (calling the plugin's save hook)
         $response = $this->actingAs($user)->post('/admin/cpt/product/store', [
             'title' => 'iPhone 17 Pro Max',
             'status' => 'published',
@@ -305,7 +313,7 @@ class BotCMSTest extends TestCase
 
         $response->assertRedirect('/admin/cpt/product');
 
-        // 4. Verify data is saved correctly in both posts and plugin_products tables
+        // 5. Verify data is saved correctly in both posts and plugin_products tables
         $this->assertDatabaseHas('posts', [
             'type' => 'product',
             'title' => 'iPhone 17 Pro Max'
@@ -318,13 +326,31 @@ class BotCMSTest extends TestCase
             'is_featured' => true
         ]);
 
-        // 5. Verify public shop index displays the product
+        // 6. Verify Payment Gateways page rendering
+        $response = $this->actingAs($user)->get('/admin/botcommerce/gateways');
+        $response->assertStatus(200);
+        $response->assertSee('Stripe Publishable Key');
+
+        // 7. Verify saving payment gateway credentials
+        $response = $this->actingAs($user)->post('/admin/botcommerce/gateways', [
+            'stripe_publishable_key' => 'pk_test_12345',
+            'stripe_secret_key' => 'sk_test_67890',
+            'stripe_mode' => 'test'
+        ]);
+        $response->assertRedirect();
+        
+        $this->assertDatabaseHas('settings', [
+            'key' => 'stripe_publishable_key',
+            'value' => 'pk_test_12345'
+        ]);
+
+        // 8. Verify public shop index displays the product
         $response = $this->get('/shop');
         $response->assertStatus(200);
         $response->assertSee('iPhone 17 Pro Max');
         $response->assertSee('$1,199.99');
 
-        // 6. Verify public single product page displays details
+        // 9. Verify public single product page displays details
         $response = $this->get('/shop/product/iphone-17-pro-max');
         $response->assertStatus(200);
         $response->assertSee('iPhone 17 Pro Max');

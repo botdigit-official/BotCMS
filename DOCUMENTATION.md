@@ -181,23 +181,24 @@ Plugins are modular feature packages residing in `/Plugins`. They boot automatic
 To build a complex extension (such as an E-commerce store or catalog), use this complete model-view-controller folder structure:
 ```
 Plugins/
-└── ProductCatalog/
+└── BotCommerce/
     ├── plugin.json                                         # Metadata descriptor
-    ├── ProductCatalogServiceProvider.php                   # Bootstrapper and hooks binder
+    ├── BotCommerceServiceProvider.php                      # Bootstrapper and hooks binder
     ├── Models/
     │   └── Product.php                                     # Eloquent Database Model
     ├── Controllers/
-    │   ├── AdminProductController.php                      # Handles edit screen form hooks
+    │   ├── AdminProductController.php                      # Handles edit screen form hooks & settings
     │   └── PublicShopController.php                        # Public shop page controller
     ├── database/
     │   └── migrations/
     │       └── 2026_07_09_000000_create_products_table.php # Custom plugin SQL migrations
     ├── routes/
-    │   └── web.php                                         # Route endpoints (/shop, etc.)
+    │   └── web.php                                         # Route endpoints (/shop, /admin/botcommerce/gateways, etc.)
     └── resources/
         └── views/
             ├── admin/
-            │   └── fields.blade.php                        # Injected input forms
+            │   ├── fields.blade.php                        # Injected input forms
+            │   └── gateways.blade.php                      # Stripe payment gateway settings page
             └── shop/
                 ├── index.blade.php                         # Product directory listing
                 └── show.blade.php                          # Product single detail page
@@ -207,7 +208,7 @@ Plugins/
 Define your plugin meta details:
 ```json
 {
-    "name": "ProductCatalog",
+    "name": "BotCommerce",
     "version": "1.0.0",
     "description": "Foundational Product Manager and Shop Catalog plugin for E-Commerce features.",
     "enabled": true
@@ -220,17 +221,18 @@ The plugin service provider registers custom routes, views, or hooks into the sy
 ```php
 <?php
 
-namespace Plugins\ProductCatalog;
+namespace Plugins\BotCommerce;
 
 use Illuminate\Support\ServiceProvider;
 use App\Core\Facades\PostType;
+use App\Core\Facades\AdminMenu;
 use App\Core\Hooks\Facades\Hook;
 
-class ProductCatalogServiceProvider extends ServiceProvider
+class BotCommerceServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        // 1. Register a new post type
+        // 1. Register new post types
         PostType::register('product', [
             'label' => 'Products',
             'singular_label' => 'Product',
@@ -238,13 +240,47 @@ class ProductCatalogServiceProvider extends ServiceProvider
             'supports' => ['title', 'editor']
         ]);
 
-        // 2. Inject admin edit fields using hooks
+        PostType::register('order', [
+            'label' => 'Orders',
+            'singular_label' => 'Order',
+            'icon' => 'chat',
+            'supports' => ['title']
+        ]);
+
+        // 2. Register dynamic Admin Menu and Submenus tree structure for BotCommerce
+        AdminMenu::register('botcommerce', [
+            'label' => 'BotCommerce',
+            'icon' => 'shopping-cart',
+            'order' => 30
+        ]);
+
+        AdminMenu::registerSubmenu('botcommerce', 'products', [
+            'label' => 'Products',
+            'route' => 'admin.cpt',
+            'route_params' => ['type' => 'product'],
+            'order' => 1
+        ]);
+
+        AdminMenu::registerSubmenu('botcommerce', 'orders', [
+            'label' => 'Orders',
+            'route' => 'admin.cpt',
+            'route_params' => ['type' => 'order'],
+            'order' => 2
+        ]);
+
+        AdminMenu::registerSubmenu('botcommerce', 'gateways', [
+            'label' => 'Gateways',
+            'route' => 'admin.botcommerce.gateways',
+            'order' => 3
+        ]);
+
+        // 3. Inject admin edit fields using hooks
         Hook::addAction('botcms_cpt_edit_fields_product', function ($post) {
             $controller = app(Controllers\AdminProductController::class);
             echo $controller->renderFields($post);
         });
 
-        // 3. Listen to save actions (specify 2 accepted arguments)
+        // 4. Listen to save actions (specify 2 accepted arguments)
         Hook::addAction('botcms_cpt_saved_product', function ($post, $request) {
             $controller = app(Controllers\AdminProductController::class);
             $controller->saveProduct($post, $request);

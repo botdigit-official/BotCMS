@@ -1,10 +1,10 @@
 <?php
 
-namespace Plugins\ProductCatalog\Controllers;
+namespace Plugins\BotCommerce\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Post;
-use Plugins\ProductCatalog\Models\Product;
+use Plugins\BotCommerce\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +25,7 @@ class PublicShopController extends Controller
         // Find site settings for branding
         $site = DB::table('sites')->find(1);
 
-        return view('productcatalog::shop.index', compact('products', 'site'));
+        return view('botcommerce::shop.index', compact('products', 'site'));
     }
 
     /**
@@ -41,6 +41,6 @@ class PublicShopController extends Controller
         $product = Product::where('post_id', $post->id)->firstOrFail();
         $site = DB::table('sites')->find(1);
 
-        return view('productcatalog::shop.show', compact('post', 'product', 'site'));
+        return view('botcommerce::shop.show', compact('post', 'product', 'site'));
     }
 }

@@ -262,29 +262,30 @@
                 </p>
                 <div class="space-y-4">
                     <p class="text-xs text-slate-400">
-                        1. To build a complex MVC extension (such as an E-commerce store), create a dedicated subfolder (e.g. <code>Plugins/ProductCatalog/</code>) containing Models, Controllers, custom Migrations, Routes, and Service Providers.
+                        1. To build a complex MVC extension (such as an E-commerce store), create a dedicated subfolder (e.g. <code>Plugins/BotCommerce/</code>) containing Models, Controllers, custom Migrations, Routes, and Service Providers.
                     </p>
                     <p class="text-xs text-slate-400">
                         2. Place a <code>plugin.json</code> descriptor file:
                     </p>
                     <pre class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-indigo-300 font-mono">
 {
-  "name": "ProductCatalog",
+  "name": "BotCommerce",
   "version": "1.0.0",
   "description": "Foundational Product Manager and Shop Catalog plugin for E-Commerce features.",
   "enabled": true
 }</pre>
                     <p class="text-xs text-slate-400">
-                        3. Create your Service Provider class to register Custom Post Types, dynamic shop routes, and hook into core actions/filters:
+                        3. Create your Service Provider class to register Custom Post Types, dynamic shop routes, submenus tree structure, and hook into core actions/filters:
                     </p>
                     <pre class="bg-slate-900 border border-slate-800 p-4 rounded-xl text-xs text-slate-400 font-mono">
-<span class="text-indigo-400">namespace</span> Plugins\ProductCatalog;
+<span class="text-indigo-400">namespace</span> Plugins\BotCommerce;
  
 <span class="text-indigo-400">use</span> Illuminate\Support\ServiceProvider;
 <span class="text-indigo-400">use</span> App\Core\Facades\PostType;
+<span class="text-indigo-400">use</span> App\Core\Facades\AdminMenu;
 <span class="text-indigo-400">use</span> App\Core\Hooks\Facades\Hook;
  
-<span class="text-indigo-400">class</span> ProductCatalogServiceProvider <span class="text-indigo-400">extends</span> ServiceProvider
+<span class="text-indigo-400">class</span> BotCommerceServiceProvider <span class="text-indigo-400">extends</span> ServiceProvider
 {
     <span class="text-indigo-400">public function</span> boot(): void
     {
@@ -294,6 +295,26 @@
             'singular_label' => 'Product',
             'icon' => 'briefcase',
             'supports' => ['title', 'editor']
+        ]);
+ 
+        <span class="text-emerald-400">// Register dynamic Admin Menus and Submenus</span>
+        AdminMenu::register('botcommerce', [
+            'label' => 'BotCommerce',
+            'icon' => 'shopping-cart',
+            'order' => 30
+        ]);
+ 
+        AdminMenu::registerSubmenu('botcommerce', 'products', [
+            'label' => 'Products',
+            'route' => 'admin.cpt',
+            'route_params' => ['type' => 'product'],
+            'order' => 1
+        ]);
+ 
+        AdminMenu::registerSubmenu('botcommerce', 'gateways', [
+            'label' => 'Gateways',
+            'route' => 'admin.botcommerce.gateways',
+            'order' => 3
         ]);
  
         <span class="text-emerald-400">// Inject custom inputs into CPT edit form using hooks</span>
